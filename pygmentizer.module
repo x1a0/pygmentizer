@@ -32,9 +32,9 @@ function pygmentizer_filter_info() {
     'tips callback'     => '_pygmentizer_inline_tip',
     'settings callback' => '_pygmentizer_inline_settings',
     'default settings'  => array(
-      'bin_path' => '/usr/local/bin/pygmentize',
-      'tag' => 'pygmentize',
-      'style' => 'default',
+      'bin_path'      => '/usr/local/bin/pygmentize',
+      'codes_wrapper' => 'pygmentize',
+      'style'         => 'default',
     ),
   );
 
@@ -46,7 +46,7 @@ function pygmentizer_filter_info() {
  */
 function _pygmentizer_inline_prepare($text, $filter, $format, $langcode, $cache, $cache_id) {
   // Escape <pygmentize> or <code> tags.
-  switch ($filter->settings['tag']) {
+  switch ($filter->settings['codes_wrapper']) {
     case 'code':
       $pattern = '/<code([^>]*)>(.*?)<\/code>/s';
       break;
@@ -81,7 +81,7 @@ function _pygmentizer_inline_pygmentize($bin_path, $style, $text) {
  * End-user-facing filter usage guidelines for the filter.
  */
 function _pygmentizer_inline_tip($filter, $format, $long) {
-  switch ($filter->settings['tag']) {
+  switch ($filter->settings['codes_wrapper']) {
     case 'code':
       return t('Use %syntax to highlight inline codes. See !available_languages.',
         array(
@@ -130,15 +130,15 @@ function _pygmentizer_inline_settings($form, &$form_state, $filter, $format, $de
     '#default_value' => $filter->settings['bin_path'],
   );
 
-  $elements['tag'] = array(
-    '#title' => t('Tag to look for'),
-    '#description' => '<span style="color:#FF0000">' . t('Warning: changing this option may lead to miss old highlights.') . '</span>',
+  $elements['codes_wrapper'] = array(
+    '#title' => t('Codes wrapper in'),
+    '#description' => '<span style="color:#FF0000">' . t('Warning: changing this may lead to miss old highlights.') . '</span>',
     '#type' => 'radios',
     '#options' => array(
-      'pygmentize' => check_plain(t('look for <pygmentize[ lang=php|html|...]>...</pygmentize> tag')),
-      'code' => check_plain(t('look for HTML <code>...</code> tag')),
+      'pygmentize' => check_plain(t('<pygmentize[ lang=php|html|...]>...</pygmentize>')),
+      'code' => check_plain(t('<code>...</code>')),
     ),
-    '#default_value' => $filter->settings['tag'],
+    '#default_value' => $filter->settings['codes_wrapper'],
   );
 
   $elements['style'] = array(
