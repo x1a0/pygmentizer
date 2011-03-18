@@ -8,8 +8,8 @@ function pygmentizer_admin_page() {
     '#default_value' => variable_get('pygmentizer_binary_path', '/usr/local/bin/pygmentize'),
   );
 
-  $form['pygmentizer_theme'] = array(
-    '#title' => t('Theme'),
+  $form['pygmentizer_style'] = array(
+    '#title' => t('Style'),
     '#type' => 'select',
     '#options' => array(
       'monokai' => 'monokai',
@@ -26,12 +26,13 @@ function pygmentizer_admin_page() {
       'autumn' => 'autumn',
       'bw' => 'bw',
       'emacs' => 'emacs',
+      'vim' => 'vim',
       'pastie' => 'pastie',
       'friendly' => 'friendly',
       'native' => 'native',
-      'github' => 'github',
+      //'github' => 'github',
     ),
-    '#default_value' => variable_get('pygmentizer_theme', 'default'),
+    '#default_value' => variable_get('pygmentizer_style', 'default'),
   );
 
   $preview_code = <<<PREVIEW
@@ -69,7 +70,7 @@ function example_form(&\$form_state, \$url) {
 </pygmentize>
 PREVIEW;
 
-  $form['pygmentizer_theme_preview'] = array(
+  $form['pygmentizer_style_preview'] = array(
     '#type' => 'item',
     '#title' => t('Theme preview'),
     '#markup' => _pygmentizer_inline_prepare($preview_code),

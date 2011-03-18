@@ -2,9 +2,7 @@
 
 function pygmentizer_init() {
   drupal_add_css(drupal_get_path('module', 'pygmentizer') . '/css/pygmentizer.css');
-
-  $theme = variable_get('pygmentizer_theme', 'default');
-  drupal_add_css(drupal_get_path('module', 'pygmentizer') . '/css/pygmentizer.' . $theme . '.css');
+  drupal_add_css(drupal_get_path('module', 'pygmentizer') . '/css/pygmentizer.styles.css');
 }
 
 /**
@@ -95,7 +93,9 @@ function _pygmentizer_replace_callback($matches) {
   $command = "echo $input | $pygmentizer_bin $options";
   $pygmentized = shell_exec($command);
 
-  $class = 'pygmentized';
+  $style = variable_get('pygmentizer_style', 'default');
+
+  $class = "pygmentized $style";
   return '<div class="' . $class . '">' . $pygmentized . '</div>';
 }
 
