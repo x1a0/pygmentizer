@@ -33,6 +33,7 @@ function pygmentizer_filter_info() {
     'settings callback' => '_pygmentizer_inline_settings',
     'default settings'  => array(
       'bin_path' => '/usr/local/bin/pygmentize',
+      'tag' => 'pygmentize',
       'style' => 'default',
     ),
   );
@@ -44,9 +45,17 @@ function pygmentizer_filter_info() {
  * Escapes the content before the actual filtering happens.
  */
 function _pygmentizer_inline_prepare($text, $filter, $format, $langcode, $cache, $cache_id) {
-  // Escape <pygmentize> and </pygmentize> tags. We also add style info
-  // here.
-  $pattern = '/<pygmentize([^>]*)>(.*?)<\/pygmentize>/s';
+  // Escape <pygmentize> or <code> tags.
+  switch ($filter->settings['tag']) {
+    case 'code':
+      $pattern = '/<code([^>]*)>(.*?)<\/code>/s';
+      break;
+
+    default:
+      $pattern = '/<pygmentize([^>]*)>(.*?)<\/pygmentize>/s';
+      break;
+  }
+
   $text = preg_replace($pattern, '[pygmentize$1]$2[/pygmentize]', $text);
   return $text;
 }
@@ -71,13 +80,26 @@ function _pygmentizer_inline_pygmentize($bin_path, $style, $text) {
 /**
  * End-user-facing filter usage guidelines for the filter.
  */
-function _pygmentizer_inline_tip() {
-  return t('Use %pygmentizer_syntax to highlight inline codes. It will guess if "lang" is not specified. See !available_languages.',
-    array(
-      '%pygmentizer_syntax' => '<pygmentize [lang=php|html|...]>...</pygmentize>',
-      '!available_languages' => l(t('available languages'), 'http://pygments.org/languages/'),
-    )
-  );
+function _pygmentizer_inline_tip($filter, $format, $long) {
+  switch ($filter->settings['tag']) {
+    case 'code':
+      return t('Use %syntax to highlight inline codes. See !available_languages.',
+        array(
+          '%syntax' => '<code>...</code>',
+          '!available_languages' => l(t('available languages'), 'http://pygments.org/languages/'),
+        )
+      );
+
+    default:
+      // we catch all other cases here, actually it should be only possible to
+      // be 'pygmentize'
+      return t('Use %syntax to highlight inline codes. It will guess if "lang" is not specified. See !available_languages.',
+        array(
+          '%syntax' => '<pygmentize [lang=php|html|...]>...</pygmentize>',
+          '!available_languages' => l(t('available languages'), 'http://pygments.org/languages/'),
+        )
+      );
+  }
 }
 
 /**
@@ -106,6 +128,17 @@ function _pygmentizer_inline_settings($form, &$form_state, $filter, $format, $de
     '#description' => t('If you are using Linux, command "which pygmentize" could help you.'),
     '#type' => 'textfield',
     '#default_value' => $filter->settings['bin_path'],
+  );
+
+  $elements['tag'] = array(
+    '#title' => t('Tag to look for'),
+    '#description' => '<span style="color:#FF0000">' . t('Warning: changing this option may lead to miss old highlights.') . '</span>',
+    '#type' => 'radios',
+    '#options' => array(
+      'pygmentize' => check_plain(t('look for <pygmentize[ lang=php|html|...]>...</pygmentize> tag')),
+      'code' => check_plain(t('look for HTML <code>...</code> tag')),
+    ),
+    '#default_value' => $filter->settings['tag'],
   );
 
   $elements['style'] = array(
