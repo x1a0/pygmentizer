@@ -1,0 +1,134 @@
+<?php
+
+function pygmentizer_init() {
+  drupal_add_css(drupal_get_path('module', 'pygmentizer') . '/css/pygmentizer.css');
+
+  $theme = variable_get('pygmentizer_theme', 'default');
+  drupal_add_css(drupal_get_path('module', 'pygmentizer') . '/css/pygmentizer.' . $theme . '.css');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function pygmentizer_menu() {
+  $items = array();
+
+  $items['admin/config/pygmentizer'] = array(
+    'title' => 'Pygmentizer',
+    'description' => 'A Python syntax highlighter.',
+    'position' => 'left',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'file' => 'system.admin.inc',
+  );
+
+  $items['admin/config/pygmentizer/settings'] = array(
+    'title' => 'General settings',
+    'description' => 'Set pygmentizer\'s binary path and theme.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('pygmentizer_admin_page'),
+    'access arguments' => array('administer pygmentizer'),
+    'file' => 'pygmentizer.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_permission().
+ */
+function pygmentizer_permission() {
+  return array(
+    'administer pygmentizer' => array(
+      'title' => t('Administer Pygmentizer'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_filter_info().
+ */
+function pygmentizer_filter_info() {
+  $filters = array();
+
+  // We need this filter to be applied before others so we use 'prepare
+  // callback' here.
+  $filters['pygmentizer_inline'] = array(
+    'title' => t('Highlight inline codes with Pygments'),
+    'tips callback' => '_pygmentizer_inline_tip',
+    'prepare callback' => '_pygmentizer_inline_prepare',
+    'cache' => TRUE,
+  );
+
+  return $filters;
+}
+
+function _pygmentizer_inline_tip() {
+  return t('Use %pygmentizer_syntax to highlight inline codes. It will guess if "lang" is not specified. See !available_languages.',
+    array(
+      '%pygmentizer_syntax' => '<pygmentize [lang=php|html|...]>...</pygmentize>',
+      '!available_languages' => l(t('available languages'), 'http://pygments.org/languages/'),
+    )
+  );
+}
+
+function _pygmentizer_inline_prepare($text) {
+  $pattern = '/<pygmentize([^>]*)>(.*?)<\/pygmentize>/s';
+  return preg_replace_callback($pattern, '_pygmentizer_replace_callback', $text);
+}
+
+/**
+ * Callback function. Get matched contents and call highlighter.
+ * $matches[1] is arguments string.
+ * $matches[2] is code string to be highlighted.
+ */
+function _pygmentizer_replace_callback($matches) {
+  // get Pygments binary path
+  $pygmentizer_bin = variable_get('pygmentizer_binary_path', '/usr/local/bin/pygmentize');
+
+  // prepare options
+  $options = _pygmentizer_get_options(trim($matches[1]));
+
+  // user input must be escaped
+  $input = escapeshellarg($matches[2]);
+
+  $command = "echo $input | $pygmentizer_bin $options";
+  $pygmentized = shell_exec($command);
+
+  $class = 'pygmentized';
+  return '<div class="' . $class . '">' . $pygmentized . '</div>';
+}
+
+/**
+ * Parse options from user input and generate Pygments options.
+ * Acceptable options:
+ *   lang: specify lexer
+ */
+function _pygmentizer_get_options($input) {
+  $args = array(
+    '-f html',
+    '-P linenos=table',
+  );
+  $guess = TRUE;
+
+  if (!empty($input)) {
+    foreach (explode(' ', $input) AS $arg) {
+      list($key, $value) = explode('=', $arg);
+      switch (strtolower(trim($key))) {
+        case 'lang':
+          $args[] = '-l ' . trim($value);
+          $guess = FALSE;
+          break;
+
+        default:
+          break;
+      }
+    }
+  }
+
+  if ($guess) {
+    $args[] = '-g';
+  }
+
+  return implode(' ', $args);
+}

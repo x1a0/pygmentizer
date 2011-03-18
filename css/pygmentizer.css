@@ -1,0 +1,32 @@
+#pygmentizer-admin-page .pygmentized table {
+  font-size: 9px;
+}
+
+.pygmentized table {
+  margin: 0;
+}
+
+.pygmentized tbody {
+  border: none;
+}
+
+.pygmentized th,
+.pygmentized td {
+  padding: 0;
+}
+
+.pygmentized .code {
+  width: 100%;
+}
+
+.pygmentized .code pre {
+  border: 1px solid #DDD;
+  padding: 0.5em;
+}
+
+.pygmentized .linenos pre {
+  background: #ECECEC;
+  border: 1px solid #DDD;
+  border-right: none;
+  padding: 0.5em;
+}
